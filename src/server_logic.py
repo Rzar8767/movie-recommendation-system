@@ -1,6 +1,12 @@
 import src.from_pandas as pandas_data
 import json
 import numpy
+from enum import Enum
+
+
+class DataSource(Enum):
+    FILE = 1
+    REDIS = 2
 
 class FloatEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -16,26 +22,36 @@ class FloatEncoder(json.JSONEncoder):
 
 class ServerLogic:
 
+    def __init__(self):
+        self.mode = DataSource.FILE
+
+    def set_mode(self, data_source):
+        self.mode = data_source
+
 #Should return a json of {'userID': <number>, 'ratings': {'genre-name': <number>,...}} style
 
     def serialize_profile_vector(self, user_id):
-        serialized = json.dumps(pandas_data.user_profile_vector(user_id), cls=FloatEncoder)
-        return serialized
+        if self.mode == DataSource.FILE:
+            serialized = json.dumps(pandas_data.user_profile_vector(user_id), cls=FloatEncoder)
+            return serialized
 
     def serialize_genre_mean(self):
-        serialized = json.dumps(pandas_data.get_movie_mean_by_genre(), cls=FloatEncoder)
-        return serialized
+        if self.mode == DataSource.FILE:
+            serialized = json.dumps(pandas_data.get_movie_mean_by_genre(), cls=FloatEncoder)
+            return serialized
 
-    def serialize_dataframe(self):
-        serialized = pandas_data.JOINED_DF.to_json(orient='index')
-        return serialized
+    def serialize_data_frame(self):
+        if self.mode == DataSource.FILE:
+            serialized = pandas_data.JOINED_DF.to_json(orient='index')
+            return serialized
 
     def delete_ratings(self):
-        pandas_data.empty_dataframe()
+        if self.mode == DataSource.FILE:
+            pandas_data.empty_data_frame()
 
     def add_row_to_dataframe(self, json_row):
-        #dict_row = json.loads(json_row)
-        pandas_data.add_row(json_row)
+        if self.mode == DataSource.FILE:
+         pandas_data.add_row(json_row)
 
 
 

@@ -59,7 +59,7 @@ def add_row(row):
     JOINED_DF = JOINED_DF.append(row, ignore_index=True)
 
 
-def empty_dataframe():
+def empty_data_frame():
     global JOINED_DF
     JOINED_DF = JOINED_DF.iloc[0:0]
     #JOINED_DF.loc[0 if math.isnan(JOINED_DF.index.max()) else JOINED_DF.index.max() + 1] = JOINED_DF

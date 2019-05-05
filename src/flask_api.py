@@ -25,7 +25,7 @@ server_logic = ServerLogic()
 
 @my_app.route("/ratings", methods=['GET'])
 def show_ratings():
-    return Response(server_logic.serialize_dataframe(), status=200, mimetype='application/json')
+    return Response(server_logic.serialize_data_frame(), status=200, mimetype='application/json')
 
 
 @my_app.route('/ratings', methods=['POST'])
