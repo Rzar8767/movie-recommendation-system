@@ -1,9 +1,10 @@
 import pandas
 import flask
 from flask import Response, request
-import json
-import from_pandas as data
 import numpy
+import json
+
+from src.server_logic import ServerLogic
 
 
 class FloatEncoder(json.JSONEncoder):
@@ -19,42 +20,37 @@ class FloatEncoder(json.JSONEncoder):
 
 
 my_app = flask.Flask(__name__)
+server_logic = ServerLogic()
 
 
 @my_app.route("/ratings", methods=['GET'])
 def show_ratings():
-    return Response(data.JOINED_DF.to_json(orient='index'), status=200, mimetype='application/json')
+    return Response(server_logic.serialize_dataframe(), status=200, mimetype='application/json')
 
 
-"""
 @my_app.route('/ratings', methods=['POST'])
 def create_rating():
-    return Response(zad1.add(request.data), status=201, mimetype='application/json')
-"""
+    new_row = request.get_json()
+    server_logic.add_row_to_dataframe(new_row)
+    response = json.dumps(new_row, cls=FloatEncoder)
+    return Response(response, status=201, mimetype='application/json')
 
 
 # Deletes the whole store
 @my_app.route('/ratings', methods=['DELETE'])
-def delete_rating():
-    #index = request.args.get('index', False)
-    Response("{}", status=204, mimetype='application/json')
+def delete_ratings():
+    server_logic.delete_ratings()
+    return Response("{}", status=204, mimetype='application/json')
 
 
-@my_app.route("/mean_genre_ratings", methods=['GET'])
+@my_app.route("/avg-genre-ratings/all-users", methods=['GET'])
 def show_mean_ratings():
-    return Response(json.dumps(data.get_movie_mean_by_genre(), cls=FloatEncoder), status=200, mimetype='application/json')
+    return Response(server_logic.serialize_genre_mean(), status=200, mimetype='application/json')
 
 
-@my_app.route("/ratings/<int:user_id>", methods=['GET'])
-def show_rating(user_id):
-    df_for_user = data.JOINED_DF.loc[data.JOINED_DF['userID'] == user_id]
-    print(df_for_user)
-    return Response(df_for_user.to_json(orient='index'), status=200, mimetype='application/json')
-
-
-@my_app.route("/mean_genre_ratings/<int:user_id>", methods=['GET'])
+@my_app.route("/avg-genre-ratings/<int:user_id>", methods=['GET'])
 def show_mean_rating(user_id):
-    return Response(json.dumps(data.get_user_mean_by_genre(user_id), cls=FloatEncoder), status=200, mimetype='application/json')
+    return Response(server_logic.serialize_profile_vector(user_id), status=200, mimetype='application/json')
 
 
 """    username = request.args.get('username')
@@ -67,5 +63,6 @@ def add_rating():
     user_rate_movies_genres = user_rate_movies_genres.append(json.loads(flask.request.data), ignore_index=True)
     return user_rate_movies_genres.to_json(orient='table', index=False)
 """
+if __name__ == '__main__':
+    my_app.run(host='0.0.0.0', port='4000')
 
-my_app.run(host='0.0.0.0', port='4000')

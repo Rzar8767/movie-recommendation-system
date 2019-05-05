@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
+import math
 
 
 def get_rated_movies_df(_nrows = None):
@@ -27,6 +28,7 @@ def get_joined():
                             dtype={'userID': np.uint64, 'movieID': np.uint64, 'rating': np.float32})
     return joined_df
 
+
 # returns column names of genres
 def user_rated_movies_with_genres(rated_movies_df, movie_genres_df):
 
@@ -52,14 +54,16 @@ def user_rated_movies_with_genres(rated_movies_df, movie_genres_df):
 JOINED_DF = get_joined()
 
 
-def create(row):
+def add_row(row):
     global JOINED_DF
-    JOINED_DF = JOINED_DF.append(row)
+    JOINED_DF = JOINED_DF.append(row, ignore_index=True)
 
 
-def delete_by_index(index):
+def empty_dataframe():
     global JOINED_DF
-    JOINED_DF = JOINED_DF.drop([index], axis=0)
+    JOINED_DF = JOINED_DF.iloc[0:0]
+    #JOINED_DF.loc[0 if math.isnan(JOINED_DF.index.max()) else JOINED_DF.index.max() + 1] = JOINED_DF
+
 
 # changes the data frame into list of dicts
 def df_to_list_of_dict(df):
@@ -100,14 +104,9 @@ def get_movie_mean_by_genre():
 def get_user_mean_by_genre(user_id):
     joined_df = JOINED_DF
 
-    #prints all users and their Action score, for debugging
-    #user_df = joined_df.groupby(['userID', 'Action']).agg({'rating': [np.nanmean]})
-    #print(user_df)
-
     avg_by_genre_usr = {"userID:": user_id, "ratings": {}}
 
     avg_rating = {}
-    #prints user's score for specific action
 
     for genre in UNIQUE_GENRES:
         avg_rating[genre] = joined_df.loc[(joined_df[genre] == 1) & (joined_df['userID'] == user_id)].rating.mean()
@@ -125,7 +124,7 @@ def user_profile_vector(user_id):
         user_rating['ratings'][genre] -= genre_rating[genre]
         if np.isnan(user_rating['ratings'][genre]):
             user_rating['ratings'][genre] = 0.0
-    print(user_rating)
+    return user_rating
 
 
 if __name__ == '__main__':
@@ -136,9 +135,11 @@ if __name__ == '__main__':
 
     #x = (df_to_list_of_dict(get_joined()))
     #print(df_from_list_of_dict(x))
-    get_movie_mean_by_genre()
+    print("Print the mean ratings for all genres: ")
+    print(get_movie_mean_by_genre())
+    print("Print user 75's mean ratings for all genres: ")
     print(get_user_mean_by_genre(75))
-    #print(get_user_mean_by_genre(78))
-    user_profile_vector(75)
+    print("Print user 75's profile vector: ")
+    print(user_profile_vector(75))
 
     #print(avg_rating_by_genre_by_user_id(75, 1414))
