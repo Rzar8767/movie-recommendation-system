@@ -33,12 +33,25 @@ class QueueRedis:
         #return self.r.get(name)
         return self.conn().get(name)
 
+    def try_get(self, name):
+        conn = self.conn()
+        if conn.exists(name):
+            return conn.get(name)
+        else:
+            return None
+
     def set(self, name, value):
         #return self.r.set(name)
         return self.conn().set(name, value)
 
     def exists(self, name):
         return self.conn().exists(name)
+
+    def delete(self, name):
+        return self.conn().delete(name)
+
+    def clear(self):
+        self.conn().flushall()
 
     def _flushdb(self):
         """
