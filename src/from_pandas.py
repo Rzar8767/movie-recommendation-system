@@ -65,6 +65,9 @@ def empty_data_frame():
     #JOINED_DF.loc[0 if math.isnan(JOINED_DF.index.max()) else JOINED_DF.index.max() + 1] = JOINED_DF
 
 
+def from_json(json):
+    return pd.read_json(json, orient='index')
+
 # changes the data frame into list of dicts
 def df_to_list_of_dict(df):
     list_of_dicts = []

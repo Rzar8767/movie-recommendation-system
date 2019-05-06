@@ -30,15 +30,15 @@ class QueueRedis:
         return self.r.lrange(name, start, stop)
 
     def get(self, name):
-        return self.r.get(name)
-        #return self.conn().get(name)
+        #return self.r.get(name)
+        return self.conn().get(name)
 
-    def set(self, name):
-        return self.r.set(name)
-        #return self.conn().set(name)
+    def set(self, name, value):
+        #return self.r.set(name)
+        return self.conn().set(name, value)
 
     def exists(self, name):
-        return self.r.exists(name)
+        return self.conn().exists(name)
 
     def _flushdb(self):
         """
@@ -67,6 +67,9 @@ class QueueRedis:
         return result
 
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     qr = QueueRedis()
+    qr.set("test", 15)
+    qr.get("test")
+    print(qr.get("test").decode("utf-8"))
+    print(qr.exists("test"))

@@ -31,7 +31,7 @@ def show_ratings():
 @my_app.route('/ratings', methods=['POST'])
 def create_rating():
     new_row = request.get_json()
-    server_logic.add_row_to_dataframe(new_row)
+    server_logic.add_row_to_data_frame(new_row)
     response = json.dumps(new_row, cls=FloatEncoder)
     return Response(response, status=201, mimetype='application/json')
 

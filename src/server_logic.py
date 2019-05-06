@@ -1,12 +1,16 @@
 import src.from_pandas as pandas_data
 import json
 import numpy
+from src.redis_client import QueueRedis
 from enum import Enum
+
+redis_pool = QueueRedis()
 
 
 class DataSource(Enum):
     FILE = 1
     REDIS = 2
+
 
 class FloatEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -23,20 +27,21 @@ class FloatEncoder(json.JSONEncoder):
 class ServerLogic:
 
     def __init__(self):
-        self.mode = DataSource.FILE
+        self.mode = DataSource.REDIS
 
-    def set_mode(self, data_source):
-        self.mode = data_source
+        if self.mode == DataSource.REDIS:
+            pandas_data.empty_data_frame()
+            pandas_data.JOINED_DF = pandas_data.from_json(redis_pool.get("ratings").decode("utf-8"))
 
-#Should return a json of {'userID': <number>, 'ratings': {'genre-name': <number>,...}} style
+    #Should return a json of {'userID': <number>, 'ratings': {'genre-name': <number>,...}} style
 
     def serialize_profile_vector(self, user_id):
-        if self.mode == DataSource.FILE:
+        if self.mode == DataSource.FILE or DataSource.REDIS:
             serialized = json.dumps(pandas_data.user_profile_vector(user_id), cls=FloatEncoder)
             return serialized
 
     def serialize_genre_mean(self):
-        if self.mode == DataSource.FILE:
+        if self.mode == DataSource.FILE or DataSource.REDIS:
             serialized = json.dumps(pandas_data.get_movie_mean_by_genre(), cls=FloatEncoder)
             return serialized
 
@@ -44,14 +49,23 @@ class ServerLogic:
         if self.mode == DataSource.FILE:
             serialized = pandas_data.JOINED_DF.to_json(orient='index')
             return serialized
+        if self.mode == DataSource.REDIS:
+            return redis_pool.get("ratings").decode("utf-8")
 
     def delete_ratings(self):
         if self.mode == DataSource.FILE:
             pandas_data.empty_data_frame()
+        if self.mode == DataSource.REDIS:
+            pandas_data.empty_data_frame()
+            redis_pool.set("ratings", "{}")
 
-    def add_row_to_dataframe(self, json_row):
+    def add_row_to_data_frame(self, json_row):
         if self.mode == DataSource.FILE:
-         pandas_data.add_row(json_row)
+            pandas_data.add_row(json_row)
+        if self.mode == DataSource.REDIS:
+            pandas_data.add_row(json_row)
+            to_redis = pandas_data.JOINED_DF.to_json(orient='index')
+            redis_pool.set("ratings", to_redis)
 
 
 
@@ -71,4 +85,15 @@ if __name__ == '__main__':
     print(server_logic.serialize_profile_vector(75))
     print("Print json mean of genre ratings: ")
     print(server_logic.serialize_genre_mean())
-    print(server_logic.serialize_dataframe())
+    print(server_logic.serialize_data_frame())
+
+    redis_ratings = pandas_data.JOINED_DF.to_json(orient='index')
+    print(redis_ratings)
+    redis_pool.set("ratings", redis_ratings)
+    print("Before loading:")
+    pandas_data.empty_data_frame()
+    print(pandas_data.JOINED_DF)
+
+    print("After loading:")
+    pandas_data.JOINED_DF = pandas_data.from_json(redis_pool.get("ratings").decode("utf-8"))
+    print(pandas_data.JOINED_DF)
