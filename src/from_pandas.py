@@ -68,6 +68,7 @@ def empty_data_frame():
 def from_json(json):
     return pd.read_json(json, orient='index')
 
+
 # changes the data frame into list of dicts
 def df_to_list_of_dict(df):
     list_of_dicts = []

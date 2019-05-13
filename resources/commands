@@ -1,3 +1,18 @@
 sudo docker run --name redisq --network host --rm redis:latest --port 6381
 
 redis-cli -p 6381
+
+sudo docker run --name main_cass -p9042:9042 --rm cassandra:latest
+
+sudo docker exec -it main_cass bash
+cqlsh
+
+
+CREATE KEYSPACE IF NOT EXISTS ratings_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+CREATE TABLE IF NOT EXISTS ratings_keyspace.user_profile(user_id int, avg_ratings_for_genre_horror
+float, avg_ratings_for_genre_war float, avg_ratings_for_genre_comedy float, PRIMARY KEY(user_id));
+
+select * from ratings_keyspace.user_profile;
+
+DROP TABLE ratings_keyspace.user_profile;

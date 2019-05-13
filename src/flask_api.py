@@ -28,7 +28,7 @@ def show_ratings():
     return Response(server_logic.serialize_data_frame(), status=200, mimetype='application/json')
 
 
-@my_app.route('/ratings', methods=['POST'])
+@my_app.route('/rating', methods=['POST'])
 def create_rating():
     new_row = request.get_json()
     server_logic.add_row_to_data_frame(new_row)

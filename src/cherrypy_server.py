@@ -6,7 +6,7 @@ except ImportError:
 from src.flask_api import my_app
 
 d = PathInfoDispatcher({'/': my_app})
-server = WSGIServer(('0.0.0.0', 80), d)
+server = WSGIServer(('localhost', 9898), d)
 
 if __name__ == '__main__':
     try:

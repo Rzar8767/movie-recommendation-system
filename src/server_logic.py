@@ -4,7 +4,6 @@ import numpy
 from src.redis_client import QueueRedis
 from enum import Enum
 
-redis_pool = QueueRedis()
 
 
 class DataSource(Enum):
@@ -30,11 +29,12 @@ class ServerLogic:
         self.mode = DataSource.REDIS
 
         if self.mode == DataSource.REDIS:
-            if redis_pool.try_get("ratings") is not None:
+            self.redis_pool = QueueRedis
+            if self.redis_pool.try_get("ratings") is not None:
                 pandas_data.JOINED_DF = pandas_data.from_json(redis_pool.get("ratings").decode("utf-8"))
             else:
                 redis_ratings = pandas_data.JOINED_DF.to_json(orient='index')
-                redis_pool.set("ratings", redis_ratings)
+                self.redis_pool.set("ratings", redis_ratings)
 
 
     #Should return a json of {'userID': <number>, 'ratings': {'genre-name': <number>,...}} style
@@ -44,7 +44,7 @@ class ServerLogic:
             serialized = json.dumps(pandas_data.user_profile_vector(user_id), cls=FloatEncoder)
             return serialized
         if self.mode == DataSource.REDIS:
-            return try_get_user_vector(user_id)
+            return try_get_user_vector_redis(user_id, self.redis_pool)
 
     def serialize_genre_mean(self):
         if self.mode == DataSource.FILE or DataSource.REDIS:
@@ -56,15 +56,15 @@ class ServerLogic:
             serialized = pandas_data.JOINED_DF.to_json(orient='index')
             return serialized
         if self.mode == DataSource.REDIS:
-            return redis_pool.get("ratings").decode("utf-8")
+            return self.redis_pool.get("ratings").decode("utf-8")
 
     def delete_ratings(self):
         if self.mode == DataSource.FILE:
             pandas_data.empty_data_frame()
         if self.mode == DataSource.REDIS:
             pandas_data.empty_data_frame()
-            redis_pool.clear()
-            redis_pool.set("ratings", "{}")
+            self.redis_pool.clear()
+            self.redis_pool.set("ratings", "{}")
 
     def add_row_to_data_frame(self, json_row):
         if self.mode == DataSource.FILE:
@@ -72,15 +72,15 @@ class ServerLogic:
         if self.mode == DataSource.REDIS:
             pandas_data.add_row(json_row)
             to_redis = pandas_data.JOINED_DF.to_json(orient='index')
-            redis_pool.set("ratings", to_redis)
-            redis_pool.delete("profile" + str(json_row["userID"]))
+            self.redis_pool.set("ratings", to_redis)
+            self.redis_pool.delete("profile" + str(json_row["userID"]))
 
 
-def try_get_user_vector(user_id):
-    user_profile = redis_pool.try_get("profile" + str(user_id))
+def try_get_user_vector_redis(user_id, redis):
+    user_profile = redis.try_get("profile" + str(user_id))
     if user_profile is None:
         vector = json.dumps(pandas_data.user_profile_vector(user_id), cls=FloatEncoder)
-        redis_pool.set("profile" + str(user_id), vector)
+        redis.set("profile" + str(user_id), vector)
         return vector
     return user_profile
 
