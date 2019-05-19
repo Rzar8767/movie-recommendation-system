@@ -2,7 +2,7 @@ sudo docker run --name redisq --network host --rm redis:latest --port 6381
 
 redis-cli -p 6381
 
-sudo docker run --name main_cass -p9042:9042 --rm cassandra:latest
+sudo docker run --name main_cass -p9042:9042 -e HEAP_NEWSIZE=100M -e MAX_HEAP_SIZE=1024M --rm cassandra:latest
 
 sudo docker exec -it main_cass bash
 cqlsh

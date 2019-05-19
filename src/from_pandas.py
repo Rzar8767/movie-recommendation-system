@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import json
-import math
 
 
 def get_rated_movies_df(_nrows = None):

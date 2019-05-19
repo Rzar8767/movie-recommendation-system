@@ -1,7 +1,7 @@
 import requests
 import time
 
-host = "http://localhost:9898"
+host = "http://localhost:4000"
 
 
 def get_ratings():

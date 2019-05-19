@@ -5,7 +5,7 @@ from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine.management import drop_table
 from cassandra.cqlengine import connection
 import src.from_pandas as panda
-
+import json
 
 class CassandraClient:
     def __init__(self):
@@ -13,12 +13,22 @@ class CassandraClient:
 
         # should be connection pool, look it up
         self.session = self.cluster.connect()
-        self.session.execute("CREATE KEYSPACE IF NOT EXISTS ratings_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};")
+        self.create_keyspace()
         connection.register_connection("cluster2", session=self.session, default=True)
-        #drop_table(model=Rating)
+        self.drop_profiles()
+        self.drop_ratings()
         sync_table(model=Rating)
-        #drop_table(model=UserProfile)
         sync_table(model=UserProfile)
+
+    def create_keyspace(self):
+        self.session.execute("CREATE KEYSPACE IF NOT EXISTS ratings_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};")
+
+    def drop_profiles(self):
+        drop_table(model=UserProfile)
+
+    def drop_ratings(self):
+        drop_table(model=Rating)
+
 
 
 def dict_keys_to_underscores(obj):
@@ -53,22 +63,22 @@ def user_profile_from_cass(obj):
     return new_dict
 
 
-if __name__ == '__main__':
-    #cassandra_client = CassandraClient()
+def cass_ratings_to_json_format(obj):
+    new_dict = {}
+
+
+    for index, row in enumerate(obj):
+        new_dict[str(index)] = dict_keys_from_underscores(dict(row))
+    return json.dumps(new_dict)
+
+
+def test_conversions():
     rating_dict = {"userID": 2,"movieID":1.0,"rating":3.0,"Action":0,"Adventure":0,"Animation":0,"Children":0,"Comedy":1,"Crime":0,"Documentary":0,"Drama":0,"Fantasy":0,"Film-Noir":0,"Horror":0,"IMAX":0,"Musical":0,"Mystery":0,"Romance":1,"Sci-Fi":0,"Short":0,"Thriller":0,"War":0,"Western":0}
     rating_dict = dict_keys_to_underscores(rating_dict)
     print(rating_dict)
     rating = Rating(**rating_dict)
     print(dict_keys_from_underscores(dict(rating)))
-    #rating.save()
     rating_dict["userID"] = 3
-    #Rating.create(**rating_dict)
-    #q = Rating.objects()
-    #print(q.count())
-    #for i in q:
-    #    print(dict_keys_from_underscores(dict(i)))
-    #print(q)
-    #print(Rating.all())
     profile = panda.user_profile_vector(75)
     print("Profile after creation: ")
     print(profile)
@@ -85,3 +95,28 @@ if __name__ == '__main__':
     print("Profile for endpoint: ")
     profile2 = user_profile_from_cass(profile)
     print(profile2)
+
+
+def test_db():
+    cassandra_client = CassandraClient()
+    rating_dict = {"userID": 2,"movieID":1.0,"rating":3.0,"Action":0,"Adventure":0,"Animation":0,"Children":0,"Comedy":1,"Crime":0,"Documentary":0,"Drama":0,"Fantasy":0,"Film-Noir":0,"Horror":0,"IMAX":0,"Musical":0,"Mystery":0,"Romance":1,"Sci-Fi":0,"Short":0,"Thriller":0,"War":0,"Western":0}
+    rating_dict = dict_keys_to_underscores(rating_dict)
+    print(rating_dict)
+    rating = Rating(**rating_dict)
+    print(dict_keys_from_underscores(dict(rating)))
+    rating.save()
+    rating_dict["movieID"] = 2
+    Rating.create(**rating_dict)
+    q = Rating.objects()
+    print(q.count())
+    for i in q:
+        print(dict_keys_from_underscores(dict(i)))
+    container = Rating.all()
+
+    json_container = cass_ratings_to_json_format(container)
+    print(json_container)
+
+    print(panda.from_json(json_container))
+
+if __name__ == '__main__':
+    test_db()

@@ -26,12 +26,12 @@ class FloatEncoder(json.JSONEncoder):
 class ServerLogic:
 
     def __init__(self):
-        self.mode = DataSource.REDIS
+        self.mode = DataSource.FILE
 
         if self.mode == DataSource.REDIS:
             self.redis_pool = QueueRedis
             if self.redis_pool.try_get("ratings") is not None:
-                pandas_data.JOINED_DF = pandas_data.from_json(redis_pool.get("ratings").decode("utf-8"))
+                pandas_data.JOINED_DF = pandas_data.from_json(self.redis_pool.get("ratings").decode("utf-8"))
             else:
                 redis_ratings = pandas_data.JOINED_DF.to_json(orient='index')
                 self.redis_pool.set("ratings", redis_ratings)
