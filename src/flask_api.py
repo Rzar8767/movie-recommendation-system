@@ -4,8 +4,8 @@ from flask import Response, request
 import numpy
 import json
 
-from src.server_logic import ServerLogic
-
+#from src.server_logic import ServerLogic
+from src.logic import CassandraServerLogic as ServerLogic
 
 class FloatEncoder(json.JSONEncoder):
     def default(self, obj):
