@@ -108,7 +108,7 @@ def get_movie_mean_by_genre():
 def get_user_mean_by_genre(user_id):
     joined_df = JOINED_DF
 
-    avg_by_genre_usr = {"userID:": user_id, "ratings": {}}
+    avg_by_genre_usr = {"userID": user_id, "ratings": {}}
 
     avg_rating = {}
 
