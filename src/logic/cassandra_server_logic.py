@@ -26,21 +26,29 @@ class CassandraServerLogic:
         pandas_data.empty_data_frame()
 
     def serialize_profile_vector(self, user_id):
-        user = UserProfile.objects.filter(userID=user_id)
-        if user.count() == 0:
+        #user = UserProfile.objects.filter(userID=user_id)
+        count = 0
+        if count == 0:
             synchronize_cassandra()
             updated_profile = pandas_data.user_profile_vector(user_id)
-            cass_profile = user_profile_to_cass(updated_profile)
-            UserProfile(**cass_profile).save()
+            #cass_profile = user_profile_to_cass(updated_profile)
+            #UserProfile(**cass_profile).save()
             serialized = json.dumps(updated_profile, cls=FloatEncoder)
-        else:
-            serialized = json.dumps(user_profile_from_cass(dict(user.first())))
-        return serialized
+       # else:
+            #serialized = json.dumps(user_profile_from_cass(dict(user.first())))
+            return serialized
 
     def serialize_genre_mean(self):
         synchronize_cassandra()
         serialized = json.dumps(pandas_data.get_movie_mean_by_genre(), cls=FloatEncoder)
         return serialized
+
+    def serialize_user_mean(self, user_id):
+        synchronize_cassandra()
+        updated_profile = pandas_data.get_user_mean_by_genre(user_id)
+        serialized = json.dumps(updated_profile, cls=FloatEncoder)
+        return serialized
+
 
     def serialize_data_frame(self):
         return cass_ratings_to_json_format(Rating.all())
@@ -56,5 +64,9 @@ class CassandraServerLogic:
 
 
 def synchronize_cassandra():
-    state = cass_ratings_to_json_format(Rating.all())
-    pandas_data.JOINED_DF = pandas_data.from_json(state)
+    ratings = Rating.all()
+    if ratings.count() == 0:
+        pandas_data.empty_data_frame()
+    else:
+        state = cass_ratings_to_json_format(ratings)
+        pandas_data.JOINED_DF = pandas_data.from_json(state)

@@ -15,10 +15,10 @@ class CassandraClient:
         self.session = self.cluster.connect()
         self.create_keyspace()
         connection.register_connection("cluster2", session=self.session, default=True)
-        #self.drop_profiles()
+        self.drop_profiles()
         #self.drop_ratings()
         sync_table(model=Rating)
-        sync_table(model=UserProfile)
+        #sync_table(model=UserProfile)
 
     def create_keyspace(self):
         self.session.execute("CREATE KEYSPACE IF NOT EXISTS ratings_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};")
@@ -27,7 +27,8 @@ class CassandraClient:
         self.session.execute("TRUNCATE " + keyspace + "." + table + ";")
 
     def clear_profiles(self):
-        self.clear_table("ratings_keyspace", "user_profile")
+        #self.clear_table("ratings_keyspace", "user_profile")
+        count = 3
 
     def clear_ratings(self):
         self.clear_table("ratings_keyspace", "ratings")

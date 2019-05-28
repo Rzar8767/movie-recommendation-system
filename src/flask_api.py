@@ -50,6 +50,11 @@ def show_mean_ratings():
 
 @my_app.route("/avg-genre-ratings/<int:user_id>", methods=['GET'])
 def show_mean_rating(user_id):
+    return Response(server_logic.serialize_user_mean(user_id), status=200, mimetype='application/json')
+
+
+@my_app.route("/profile/<int:user_id>", methods=['GET'])
+def show_user_profile(user_id):
     return Response(server_logic.serialize_profile_vector(user_id), status=200, mimetype='application/json')
 
 
