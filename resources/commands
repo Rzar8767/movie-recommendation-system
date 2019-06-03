@@ -16,3 +16,19 @@ float, avg_ratings_for_genre_war float, avg_ratings_for_genre_comedy float, PRIM
 select * from ratings_keyspace.user_profile;
 
 DROP TABLE ratings_keyspace.user_profile;
+
+
+sudo docker run --network host --name elastic --rm -e"http.port=10000" -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.6.2
+
+PUT /customer?pretty
+
+curl -X PUT "localhost:10000/movies/_settings" -H'Content-Type: application/json' -d'{"index" :{"number_of_replicas" : 2}}'{"acknowledged":true}
+
+curl -X GET "localhost:10000/_cat/indices?v"
+
+Listy preselekcyjne robimy poniewaz nie mozna wykonac w krotkim czasie predykcji dla dziesiatek tysiecy probek
+musimy je wstepnie wyselekcjonowac i jednym z podejsc jest wlasnie filtracja kolaboratywna ktora jest prostym algorytmem rekomendacyjnym
+
+curl -X DELETE "localhost:10000/customer"
+
+curl -X GET "localhost:10000/movies?pretty"
