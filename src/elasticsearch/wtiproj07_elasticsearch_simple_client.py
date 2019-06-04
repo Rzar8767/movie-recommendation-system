@@ -165,12 +165,13 @@ class ElasticClient:
         self.add_movie_to_users(movie_id, users_who_like_movie)
 
     def delete_user_document(self, user_id, user_index, movie_index):
-       # try:
-            user_id = int(user_id)
-            self.delete_user_from_movies([user_id])
-            self.es.delete(index=user_index, doc_type="user", id=user_id)
-      #  except helpers.errors.BulkIndexError as _bulk:
-      #      return
+        # try:
+        user_id = int(user_id)
+        self.delete_user_from_movies([user_id])
+        self.es.delete(index=user_index, doc_type="user", id=user_id)
+
+    #  except helpers.errors.BulkIndexError as _bulk:
+    #      return
 
     def delete_movie_document(self, movie_id, user_index, movie_index):
         try:
@@ -215,6 +216,14 @@ class ElasticClient:
 
         helpers.bulk(self.es, add_movie_to_users, request_timeout=1000)
 
+        for_creation = list()
+        # if movie doesn't exist add it
+        for user in users_liking_movie['hits']['hits']:
+            for_creation.append(user['_id'])
+        for id in for_creation:
+            if id not in users_who_like_movie:
+                self.add_user_document(id, [movie_id], 'users', 'movies')
+
     def delete_movie_from_users(self, movie_ids):
         users_who_liked_movie = self.es.search(index="users", body=
         {
@@ -241,7 +250,7 @@ class ElasticClient:
     def add_user_to_movies(self, user_id, movies_liked_by_user):
 
         try:
-            movies_liked_by_user = self.es.search(index="movies", body=
+            movies_that_user_likes = self.es.search(index="movies", body=
             {
                 "query": {
                     "terms":
@@ -258,10 +267,18 @@ class ElasticClient:
                     "_index": "movies",
                     "_source": {'doc': {'whoRated': list(set(movie["_source"]["whoRated"].append(user_id)))}},
                     "_op_type": 'update'
-                } for movie in movies_liked_by_user['hits']['hits']
+                } for movie in movies_that_user_likes['hits']['hits']
             ]
 
             helpers.bulk(self.es, add_user_to_movies, request_timeout=1000)
+
+            for_creation = list()
+            # if movie doesn't exist add it
+            for movie in movies_that_user_likes['hits']['hits']:
+                for_creation.append(movie['_id'])
+            for id in for_creation:
+                if id not in movies_liked_by_user:
+                    self.add_user_document(id, [user_id], 'users', 'movies')
         except TypeError:
             return
 
@@ -357,12 +374,12 @@ if __name__ == "__main__":
     print(ec.get_preselection_for_movie(some_test_movie_ID))
 
     print("Delete the fact users like movie of ID 1.")
-    ec.delete_movie_from_users([some_test_movie_ID])
+  #  ec.delete_movie_from_users([some_test_movie_ID])
     print("Wait for indice refresh")
     ec.es.indices.refresh('users')
     # ec.es.cluster.health(wait_for_no_relocating_shards=True, wait_for_active_shards='all')
     print("Second run:")
-    ec.delete_movie_from_users2([some_test_movie_ID])
+    #ec.delete_movie_from_users([some_test_movie_ID])
 
     print("Get preselection for movieID again", some_test_movie_ID)
     print(ec.get_preselection_for_movie(some_test_movie_ID))
